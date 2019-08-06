@@ -1,0 +1,391 @@
+a) The mkwords 1000000 3 command produces 857424 distinct words. What is the maximum chain length if a hash table size of 85711 is used? How does the chain length distribution change if the hash table size is 100000? 214283? 400000? 400837? 857144? 857137?
+
+85711:
+Max chain length of 25. Bell curve-like distribution with the 9 and 10 length chains being the most frequent.
+100000:
+Max chain length of 36. The curve is skewed towards the lower numbers, with 7 being the most frequent, followed closely by 6, 8 and 9.
+214283:
+Max chain length of 16. The curve is further skewed towards the lower numbers, with 3 and 4 being the most frequent.
+400000:
+Max chain length of 16. 1 and 2 are the most frequent numbers.
+400837:
+Max chain length of 12. 1 and 2 are the most frequent numbers. The curve is extremely similar to the 400000 curve
+857144:
+Max chain length of 9. 0 and 1 are the most frequent numbers
+857137:
+Max chain length of 9. 0 and 1 are the most frequent numbers
+
+As the number of slots increases, the chain length distribution tends towards the lower numbers. This is because the chance of collisions is less when there are more slots, thus chains tend to be shorter.
+
+b) Every other number above (i.e. 85711, 214283, 400837, 857137) is prime. It is often noted that using prime numbers appropriately in the hash function leads to a better distribution of hash values, and thus generally shorter chains. Does this appear to be the case for the hash table sizes in the previous question?
+
+When comparing the chain length distribution of the above tables, this does appear to be the case, but only slightly.
+Comparing 400000 and 400837:
+400000:
+  Length  #Chains
+       0    53644
+       1   101973
+       2   102409
+       3    71093
+       4    39086
+400837:
+  Length  #Chains
+       0    47251
+       1   100881
+       2   107773
+       3    77228
+       4    41365
+The chain length distributions are almost exactly the same, with 400837 being slightly better off (as well as having a slightly better max chain length of 16).
+A similar story can be seen for the comparion between 857144 and 857137:
+857144:
+  Length  #Chains
+       0   317687
+       1   312678
+       2   156949
+       3    52670
+857137:
+  Length  #Chains
+       0   315092
+       1   315639
+       2   157414
+       3    52728
+Both of these have a maximum chain length of 9, thus the advantage of using the prime 857137 is even lower.
+The first three table lengths of 85711, 100000 and 214283 should not be compared to figure out the benefits of using a prime number, as their lengths differ too much, and their differences can be explained by the general effect of longer tables having shorter chains.
+
+c) An "optimal" hash table would have all slots occupied and have all chains of length roughly (nwords/nslots). In practice, this is impossible to achieve in the general case, and what we want is a table with relatively short chains, with as few slots as possible (small size of hash table), and not too many empty slots. Can you find a suitable hash table size that keeps the maximum chain length under 10, and has most chains with length 1 or 2, but also uses more than 2/3 of the slots?
+
+We will be using prime table sizes as these will help with having lower chain lengths (they are worth the effort despite the effect apparently being small).
+Prime numbers were obtained from: https://primes.utm.edu/lists/small/100000.txt
+First guess: 619841
+  Length  #Chains
+       0   156614
+       1   214104
+       2   148037
+       3    68290
+       4    24054
+       5     6751
+       6     1611
+       7      315
+       8       54
+       9        8
+      10        3
+This has a maximum chain length greater than 9, therefore:
+Second guess: 705317
+  Length  #Chains
+       0   208828
+       1   254872
+       2   154117
+       3    62734
+       4    19037
+       5     4636
+       6      903
+       7      156
+       8       28
+       9        6
+This uses approximately 5/7 slots, has a maximum chain length of 9, and has approximately 400000 chains of length 1 or 2. Therefore it fits our criteria
+
+d) Compare both the outputs and the profiles for the two commands:
+
+$ ./words /home/cs2521/web/17s2/labs/week12/places 1048576
+$ ./words /home/cs2521/web/17s2/labs/week12/places 1048573
+
+What does this tell you about hash table search performance when the hash function is significantly sub-optimal?
+
+Output of 1048576: 
+Hash Table Stats:
+Number of slots = 1048576
+Number of items = 5252075
+Chain length distribution
+  Length  #Chains
+       0    25519
+       1    82104
+       2   139069
+       3   167369
+       4   163169
+       5   138079
+       6   105762
+       7    75826
+       8    51287
+       9    33590
+      10    21288
+      11    13318
+      12     8506
+      13     5554
+      14     3657
+      15     2502
+      16     1803
+      17     1375
+      18     1051
+This output continues on, with the maximum chain length being 4479
+
+Output of 1048573:
+Hash Table Stats:
+Number of slots = 1048573
+Number of items = 5252075
+Chain length distribution
+  Length  #Chains
+       0     7226
+       1    35772
+       2    89435
+       3   146900
+       4   182833
+       5   181797
+       6   152354
+       7   109465
+       8    68972
+       9    38913
+      10    19587
+      11     9147
+      12     3909
+      13     1438
+      14      559
+      15      173
+      16       61
+      17       23
+      18        5
+      19        3
+      20        1
+
+Profile of 1048576:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 55.32      4.63     4.63 10504154     0.00     0.00  ListSearch
+ 21.62      6.44     1.81 10504154     0.00     0.00  hash
+  5.85      6.93     0.49  1048576     0.00     0.00  ListLength
+  5.38      7.38     0.45  1048576     0.00     0.00  dropList
+  4.90      7.79     0.41  5252075     0.00     0.00  HashTableInsert
+  4.42      8.16     0.37 258728702     0.00     0.00  cmp
+  0.60      8.21     0.05  5252075     0.00     0.00  newItem
+  0.48      8.25     0.04  5252079     0.00     0.00  HashTableSearch
+  0.48      8.29     0.04  5252076     0.00     0.00  ItemGet
+  0.42      8.32     0.04  5252075     0.00     0.00  ListInsert
+  0.36      8.36     0.03                             main
+  0.12      8.37     0.01  1048576     0.00     0.00  newList
+  0.06      8.37     0.01                             ListDelete
+  0.00      8.37     0.00  5252075     0.00     0.00  dropItem
+  0.00      8.37     0.00        1     0.00   490.00  HashTableStats
+  0.00      8.37     0.00        1     0.00   450.00  dropHashTable
+  0.00      8.37     0.00        1     0.00    10.00  newHashTable
+
+Profile of 1048573:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 39.35      2.00     2.00 10504154     0.00     0.00  hash
+ 28.60      3.44     1.45 10504154     0.00     0.00  ListSearch
+ 11.34      4.02     0.57  1048573     0.00     0.00  dropList
+  7.69      4.41     0.39  1048573     0.00     0.00  ListLength
+  6.71      4.75     0.34  5252075     0.00     0.00  HashTableInsert
+  1.78      4.84     0.09  5252079     0.00     0.00  HashTableSearch
+  1.08      4.89     0.06 36897911     0.00     0.00  cmp
+  0.79      4.93     0.04  5252075     0.00     0.00  ListInsert
+  0.39      4.96     0.02  5252076     0.00     0.00  ItemGet
+  0.39      4.97     0.02        1    20.00   410.00  HashTableStats
+  0.39      5.00     0.02        1    20.00   595.00  dropHashTable
+  0.39      5.01     0.02                             ItemShow
+  0.30      5.03     0.01  5252075     0.00     0.00  newItem
+  0.30      5.04     0.01                             main
+  0.20      5.05     0.01        1    10.00    15.00  newHashTable
+  0.20      5.07     0.01                             HashTableDelete
+  0.10      5.07     0.01  1048573     0.00     0.00  newList
+  0.00      5.07     0.00  5252075     0.00     0.00  dropItem
+
+By comparing the outputs, it is obvious that the second table size leads to a much more efficient hash function (much fewer zero length chains, maximum chain length is also much lower).
+Both profiles show that the hashing and searching functions were all called the same amount of time, however the total amount of time spent executing the searching function in the first table was over double that in the second. Thus, an inefficient hash function will lead to poor searching performance, as collisions will occur more frequently, and more processing will have to be done to resolve them (iterating through longer lists).
+
+e) Examine the profiles from running the command:
+
+$ ./mkwords 1000000 | ./words - N
+for a number of different values of N What are the most costly functions (in terms of overall time)?
+
+N = 10000:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 65.69      0.90     0.90  2000004     0.00     0.00  ListSearch
+ 17.52      1.14     0.24  2000004     0.00     0.00  hash
+  8.39      1.25     0.12 79074901     0.00     0.00  cmp
+  2.19      1.28     0.03    10000     0.00     0.00  ListLength
+  1.82      1.31     0.03  1000000     0.00     0.00  newItem
+  1.46      1.33     0.02   857424     0.00     0.00  ListInsert
+  0.73      1.34     0.01  1000000     0.00     0.00  HashTableInsert
+  0.73      1.35     0.01                             ItemShow
+  0.73      1.36     0.01                             main
+  0.36      1.36     0.01  1000004     0.00     0.00  HashTableSearch
+  0.36      1.37     0.01    10000     0.00     0.00  newList
+  0.00      1.37     0.00  1000001     0.00     0.00  ItemGet
+  0.00      1.37     0.00   857424     0.00     0.00  dropItem
+  0.00      1.37     0.00    10000     0.00     0.00  dropList
+  0.00      1.37     0.00        1     0.00    30.00  HashTableStats
+  0.00      1.37     0.00        1     0.00     0.00  dropHashTable
+  0.00      1.37     0.00        1     0.00     5.00  newHashTable
+
+N = 100000:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 39.47      0.30     0.30  2000004     0.00     0.00  hash
+ 35.53      0.57     0.27  2000004     0.00     0.00  ListSearch
+  6.58      0.62     0.05   100000     0.00     0.00  ListLength
+  5.26      0.66     0.04   100000     0.00     0.00  dropList
+  3.95      0.69     0.03 10209718     0.00     0.00  cmp
+  2.63      0.71     0.02  1000004     0.00     0.00  HashTableSearch
+  2.63      0.73     0.02  1000000     0.00     0.00  HashTableInsert
+  1.32      0.74     0.01   857424     0.00     0.00  ListInsert
+  1.32      0.75     0.01        1    10.00    60.00  HashTableStats
+  1.32      0.76     0.01        1    10.00    50.00  dropHashTable
+  0.00      0.76     0.00  1000001     0.00     0.00  ItemGet
+  0.00      0.76     0.00  1000000     0.00     0.00  newItem
+  0.00      0.76     0.00   857424     0.00     0.00  dropItem
+  0.00      0.76     0.00   100000     0.00     0.00  newList
+  0.00      0.76     0.00        1     0.00     0.00  newHashTable
+
+N = 1000000:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 50.94      0.27     0.27  2000004     0.00     0.00  hash
+ 15.09      0.35     0.08  2000004     0.00     0.00  ListSearch
+  9.43      0.40     0.05  1000000     0.00     0.00  dropList
+  7.55      0.44     0.04  1000000     0.00     0.00  ListLength
+  3.77      0.46     0.02  1000001     0.00     0.00  ItemGet
+  3.77      0.48     0.02  1000000     0.00     0.00  HashTableInsert
+  2.83      0.49     0.01  2914896     0.00     0.00  cmp
+  1.89      0.51     0.01        1    10.00    50.00  HashTableStats
+  1.89      0.52     0.01        1    10.00    60.00  dropHashTable
+  1.89      0.53     0.01        1    10.00    10.00  newHashTable
+  0.94      0.53     0.01  1000000     0.00     0.00  newItem
+  0.00      0.53     0.00  1000004     0.00     0.00  HashTableSearch
+  0.00      0.53     0.00  1000000     0.00     0.00  newList
+  0.00      0.53     0.00   857424     0.00     0.00  ListInsert
+  0.00      0.53     0.00   857424     0.00     0.00  dropItem
+
+N = 10000000:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 33.33      0.25     0.25  2000004     0.00     0.00  hash
+ 17.33      0.38     0.13 10000000     0.00     0.00  ListLength
+ 12.00      0.47     0.09  2000004     0.00     0.00  ListSearch
+  9.33      0.54     0.07 10000000     0.00     0.00  dropList
+  9.33      0.61     0.07  1000000     0.00     0.00  HashTableInsert
+  6.67      0.66     0.05        1    50.00   120.00  dropHashTable
+  4.00      0.69     0.03        1    30.00   160.00  HashTableStats
+  2.67      0.71     0.02        1    20.00    30.00  newHashTable
+  1.33      0.72     0.01 10000000     0.00     0.00  newList
+  1.33      0.73     0.01  1000001     0.00     0.00  ItemGet
+  1.33      0.74     0.01                             main
+  1.33      0.75     0.01                             showList
+  0.00      0.75     0.00  2219737     0.00     0.00  cmp
+  0.00      0.75     0.00  1000004     0.00     0.00  HashTableSearch
+  0.00      0.75     0.00  1000000     0.00     0.00  newItem
+  0.00      0.75     0.00   857424     0.00     0.00  ListInsert
+  0.00      0.75     0.00   857424     0.00     0.00  dropItem
+
+The hashing function takes about the same amount of time regardless of the table size. This is because the number of times it is called remains the same (based on the amount of input) and it does not get less efficient as the table size increases.
+The listSearch function takes much longer amounts of time on shorter lists. This is because there are many more collisions on smaller tables and thus much longer chains. The listSearch function, which performs a linear search, thus takes longer and longer amounts of time.
+Similarly, the listLength function counts the number of nodes in the given list, and also takes longer amounts of time on longer lists.
+Thus, the most expensive function is the listSearch function on small table sizes, and the hash function on large tables.
+
+f) Suggest how the individual functions might be improved. Suggest how the overall performance might be improved.
+
+ListLength can be improved by storing a length variable in the listRep data structure, allowing a O(1) time cost. 
+The listSearch function can be improved by performing a binary search, but this is not currently possible as the lists are currently linked lists (which means no random access). Also, this would mean that ListInsert would have to do more processing. Implementing this would be beneficial when many more searches are performed than inserts, or when there is a high ratio of input size to table size (which would lead to longer lists).
+The hash function may be improved by using a better method which would lead to less collisions. This may not make the function itself faster, but could improve the overall performance of the table as fewer collisions means less processing is needed to search for elements.
+
+The overall performance could also be improved by using a different collision resolution method, such as linear probing, which would reduce the amount of memory required for the table. However, this would require that the number of inputs is less than the size of the table, and the performance could be poor if the input was close to the size of the table.
+
+g) Implement your suggestions and then give a new profile to show the improvement, and explain how the profile shows the improvement.
+
+Suggestions implemented: list length variable, better hashing
+
+Old profile of 10000000 table size, 10000000 words:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 34.57      0.28     0.28  2000004     0.00     0.00  hash
+ 12.35      0.38     0.10 10000000     0.00     0.00  ListLength
+ 12.35      0.48     0.10 10000000     0.00     0.00  dropList
+ 12.35      0.58     0.10  2000004     0.00     0.00  ListSearch
+  9.88      0.66     0.08  1000000     0.00     0.00  HashTableInsert
+  3.70      0.69     0.03   857424     0.00     0.00  ListInsert
+  3.70      0.72     0.03        1    30.00   130.00  HashTableStats
+  3.70      0.75     0.03        1    30.00    45.00  newHashTable
+  2.47      0.77     0.02        1    20.00   120.00  dropHashTable
+  1.85      0.79     0.01 10000000     0.00     0.00  newList
+  1.23      0.80     0.01                             HashTableDelete
+  1.23      0.81     0.01                             main
+  0.62      0.81     0.01  1000004     0.00     0.00  HashTableSearch
+  0.00      0.81     0.00  2219737     0.00     0.00  cmp
+  0.00      0.81     0.00  1000001     0.00     0.00  ItemGet
+  0.00      0.81     0.00  1000000     0.00     0.00  newItem
+  0.00      0.81     0.00   857424     0.00     0.00  dropItem
+
+
+Profile after introducing length variable:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 23.68      0.18     0.18  2000004     0.00     0.00  hash
+ 19.74      0.33     0.15  2000004     0.00     0.00  ListSearch
+ 12.50      0.42     0.10 10000000     0.00     0.00  dropList
+  9.21      0.49     0.07  1000000     0.00     0.00  HashTableInsert
+  9.21      0.56     0.07        1    70.00   165.00  dropHashTable
+  7.89      0.62     0.06        1    60.00    70.00  HashTableStats
+  5.92      0.67     0.04 10000000     0.00     0.00  newList
+  3.95      0.70     0.03        1    30.00    75.00  newHashTable
+  2.63      0.72     0.02                             main
+  1.32      0.73     0.01 10000000     0.00     0.00  ListLength
+  1.32      0.74     0.01  2219737     0.00     0.00  cmp
+  1.32      0.75     0.01  1000000     0.00     0.00  newItem
+  0.66      0.76     0.01  1000001     0.00     0.00  ItemGet
+  0.66      0.76     0.01                             ItemShow
+  0.00      0.76     0.00  1000004     0.00     0.00  HashTableSearch
+  0.00      0.76     0.00   857424     0.00     0.00  ListInsert
+  0.00      0.76     0.00   857424     0.00     0.00  dropItem
+
+Clearly, implementing a list length variable has improved the performance of the hashtable, with the ListLength function taking only 0.01 seconds as opposed to 0.10.
+
+Old profile of 100000000 table size, 100000000 words:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 45.67     43.31    43.31 200000004     0.00     0.00  ListSearch
+ 23.46     65.56    22.25 200000004     0.00     0.00  hash
+ 13.14     78.02    12.46 10000000     0.00     0.00  dropList
+ 10.38     87.86     9.84 100000000     0.00     0.00  HashTableInsert
+  2.04     89.80     1.94 818364765     0.00     0.00  cmp
+  2.00     91.69     1.90 75064942     0.00     0.00  ListInsert
+  0.90     92.55     0.85                             main
+  0.56     93.08     0.53 100000004     0.00     0.00  HashTableSearch
+  0.56     93.61     0.53 100000000     0.00     0.00  newItem
+  0.49     94.06     0.46 100000001     0.00     0.00  ItemGet
+  0.19     94.25     0.18                             ItemShow
+  0.18     94.42     0.17 10000000     0.00     0.00  ListLength
+  0.15     94.56     0.14        1     0.14    12.71  dropHashTable
+  0.12     94.67     0.12 75064942     0.00     0.00  dropItem
+  0.08     94.75     0.08 10000000     0.00     0.00  newList
+  0.03     94.78     0.03        1     0.03     0.20  HashTableStats
+  0.03     94.81     0.03        1     0.03     0.11  newHashTable
+  0.02     94.83     0.02                             HashTableDelete
+  0.01     94.84     0.01                             ListDelete
+
+
+Profile after changing hashing function:
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 47.52     39.38    39.38 200000004     0.00     0.00  ListSearch
+ 24.74     59.88    20.50 200000004     0.00     0.00  hash
+ 11.44     69.36     9.48 100000000     0.00     0.00  HashTableInsert
+  9.63     77.33     7.98 10000000     0.00     0.00  dropList
+  1.80     78.83     1.50 806537987     0.00     0.00  cmp
+  1.30     79.91     1.08 100000000     0.00     0.00  newItem
+  0.98     80.72     0.81                             main
+  0.60     81.22     0.50 100000001     0.00     0.00  ItemGet
+  0.49     81.62     0.41 100000004     0.00     0.00  HashTableSearch
+  0.37     81.94     0.31 75064942     0.00     0.00  ListInsert
+  0.37     82.25     0.31 10000000     0.00     0.00  ListLength
+  0.21     82.42     0.17 10000000     0.00     0.00  newList
+  0.15     82.54     0.12 75064942     0.00     0.00  dropItem
+  0.11     82.63     0.09        1     0.09     0.40  HashTableStats
+  0.10     82.71     0.08        1     0.08     0.25  newHashTable
+  0.08     82.78     0.07        1     0.07     8.18  dropHashTable
+  0.07     82.83     0.06                             ItemShow
+  0.02     82.85     0.01                             HashTableDelete
+  0.01     82.86     0.01                             ListDelete
+
+
+Changing the hashing function to include mixing has lead to more spread out hashing and thus a reduced collision rate, therefore causing faster searching.
+

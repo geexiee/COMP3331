@@ -1,0 +1,26 @@
+Input	Initial	Has	Number	AvgTime	AvgTime
+Size	Order	Dups	of runs	forusel	forsort
+5000	random	no	5	0.145	0
+5000	sorted	no	5	0.095	0
+5000	reverse	no	5	0.10	0
+5000	random	yes	5	0.13	0
+5000	sorted	yes	5	0.09	0
+5000	reverse	yes	5	0.09	0
+10000	random	no	5	0.44	0
+10000	sorted	no	5	0.25	0
+10000	reverse	no	5	0.24	0
+10000	random	yes	5	0.43	0
+10000	sorted	yes	5	0.22	0
+10000	reverse	yes	5	0.24	0
+50000   random  no	5	24.1	0.02
+50000	sorted  no	5	4.6	    0.01	
+50000	reverse no	5	4.5	    0.01	
+50000	random	yes	5	23.5	0.03
+50000	sorted	yes	5	4.6 	0.01
+50000	reverse	yes	5	4.5		0.015
+
+For the usel algorithm, the time taken for sorted and reversed order of numbers (with and without duplicates) are similar across all input sizes.
+The usel algorithm runs very similar code for sorted and reversed (sorted = smallest value, reversed = largest), which is why the times are similar.
+The usel algorithm takes longer for random order since a while loop is used, causing the program to constantly check numbers until the condition to exit the loop is fulfilled, which could potentially take a long time.
+This is why the time for sorted and reversed are much shorter than random.
+Average time for sort is significantly lower than usel because the code is designed much more efficiently than the methods used in usel.

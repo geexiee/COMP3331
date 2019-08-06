@@ -1,0 +1,109 @@
+#!/usr/bin/php
+<?php
+require("a2.php");
+
+// PROGRAM BODY BEGINS
+
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+$usage = "usage: ./similar \"movie title\" number_of_recommendations";
+if (count($argv) != 3) {
+	echo "$usage\n";
+	return;
+}
+
+$movietitle = strtoupper($argv[1]);
+if ($argv[2] < 1 || $argv[2] > 1000) {
+	echo "number of recommendations must be between 1 and 1000\n";
+	return;
+}
+
+else {
+	$nrecs = $argv[2];
+}
+
+// get list of genres corresponding to the inputted movie
+$q = "select m.title, g.genre from movie m, genre g where m.id = g.movie_id and UPPER(m.title) = %s";
+$r = dbQuery($db, mkSQL($q, $movietitle));
+$ngenres = dbNresults($r);
+
+// get list of key words corresponding to the inputted movie
+$k = "select k.keyword from keyword k, movie m where UPPER(m.title) = %s and m.id = k.movie_id";
+$rk = dbQuery($db, mkSQL($k, $movietitle));
+$nkeywords = dbNresults($rk);
+
+// create array of genres and keywords
+$keywordarray = array();
+$genrearray = array();
+while ($t = dbNext($r)){
+	array_push($genrearray, $t[1]);
+}
+
+while ($t = dbNext($rk)) {
+	array_push($keywordarray, $t[0]);
+}
+
+// use our function to turn it into something we can put in a query
+$genrelist = addquotes($genrearray, $ngenres);
+$keywordlist = addquotes($keywordarray, $nkeywords);
+
+// Now we can use the list of genres in an sql query
+$queryrecs = "select m.title, count(g.genre), r.imdb_score, r.num_voted_users, m.year from movie m, genre g, rating r where r.movie_id = m.id and m.id = g.movie_id and g.genre in (%L) and  m.title != %s group by m.title, r.imdb_score, r.num_voted_users, m.year order by count(g.genre) DESC";
+// this represents the list of movies which have at least 1 genre in common
+// and their number of common genres
+$samegmovies = dbQuery($db, mkSQL($queryrecs, $genrelist, $movietitle));
+
+$count = dbNresults($samegmovies);
+
+$multiarray = array();
+$i = 0;
+while ($t = dbNext($samegmovies)) {
+	$temparray = array();
+	array_push($multiarray, $temparray);
+	$multiarray[$i]["id"] = $i+1; 
+	$multiarray[$i]["title"] = $t[0];	// put the title of the movie in
+	$multiarray[$i]["ngenres"] = $t[1];	// put number of matching genres in
+	$multiarray[$i]["imdb_score"] = $t[2];
+	$multiarray[$i]["num_voted_users"] = $t[3];
+	$multiarray[$i]["year"] = $t[4];
+
+	// query the movie for number of matching keywords
+	$kwordquery = "select m.title, count(k.keyword) from movie m, keyword k where m.title = %s and m.id = k.movie_id and k.keyword in (%L) group by m.title";
+	$kwords = dbQuery($db, mkSQL($kwordquery, $t[0], $keywordlist));
+	$kwords = dbNext($kwords);
+
+	if ($kwords[1] > 0) {
+		$multiarray[$i]["nkeywords"] = $kwords[1];
+	}
+	else {
+		$multiarray[$i]["nkeywords"] = 0;
+	}
+	$i++;
+}
+
+// sort our multiarray
+$sort = array();
+foreach($multiarray as $k=>$v) {
+    $sort["ngenres"][$k] = $v["ngenres"];
+    $sort["nkeywords"][$k] = $v["nkeywords"];
+	$sort["imdb_score"][$k] = $v["imdb_score"];
+	$sort["num_voted_users"][$k] = $v["num_voted_users"];
+	$sort["year"][$k] = $v["year"];
+}
+array_multisort($sort["ngenres"], SORT_DESC, $sort["nkeywords"], SORT_DESC, $sort["imdb_score"], SORT_DESC, $sort["num_voted_users"], SORT_DESC,$multiarray);
+
+// Array has been sorted, now to print everything
+$i = 0;
+$num = 1;
+while ($i < $nrecs) {
+	echo $num."."." ".$multiarray[$i]["title"];
+	if (!empty($multiarray[$i]["year"])) 
+	echo " (".$multiarray[$i]["year"].")"; 
+	echo " [".$multiarray[$i]["ngenres"].", ".$multiarray[$i]["nkeywords"].", ".$multiarray[$i]["imdb_score"].", ".$multiarray[$i]["num_voted_users"]."]";
+	echo "\n";	
+	$i++;
+	$num++;
+}
+
+?>

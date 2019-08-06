@@ -1,0 +1,75 @@
+#!/usr/bin/php
+<?php
+
+// include the common PHP code file
+require("a2.php");
+
+$usage = "Usage: $argv[0] idk";
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+if (count($argv)!= 5 && count($argv) != 4)  {
+	exit("$usage\n");
+}
+
+// 4 Argument Case
+if (count($argv) == 4) {
+	$limit = $argv[1];
+	$startyear = $argv[2];
+	$endyear = $argv[3];
+	$q = "select m.title, m.year, m.content_rating, m.lang, r.imdb_score, r.num_voted_users from movie m, rating r where r.movie_id = m.id and m.year >= %d and m.year <= %d order by r.imdb_score DESC, r.num_voted_users DESC limit %d";
+	$r = dbQuery($db, mkSQL($q, $startyear, $endyear, $limit));
+
+// Iterate through the results and print
+	$i = 1;
+	while ($t = dbNext($r)) {
+		echo "$i. ";	
+		if (!empty($t[0]))
+		echo $t[0]." ";
+		echo "("; 
+		if (!empty($t[1]))
+		echo "$t[1], ";
+		if (!empty($t[2]))
+		echo "$t[2], ";
+		if (!empty($t[3]))
+		echo "$t[3]";
+		echo ")";
+		
+		echo " [";
+		if (!empty($t[4]))
+		echo "$t[4], ";
+		if (!empty($t[5]))
+		echo "$t[5]";
+		echo "]\n";	
+		$i++;
+	}
+}
+
+if (count($argv) == 5) {
+	$gq = "select gmovies.titles from (
+    select meme.titles, count(distinct(meme.genre)), meme.imdb_score, meme.num_voted_users from (
+        select g.genre genre, m.title titles, m.year, m.content_rating, m.lang, r.imdb_score imdb_score, r.num_voted_users num_voted_users
+            from movie m, rating r, genre g
+            where r.movie_id = m.id and m.year >= %d and m.year <= %d and g.movie_id = m.id and g.genre in (%L)
+            order by r.imdb_score DESC, r.num_voted_users DESC 
+        )
+        as meme group by meme.titles, meme.imdb_score, meme.num_voted_users
+    )
+    as gmovies where gmovies.count = %d order by gmovies.imdb_score DESC, gmovies.num_voted_users DESC limit %d"; 
+	$genrestring = $argv[1];
+	$limit = $argv[2];
+	$startyear = $argv[3];
+	$endyear = $argv[4];
+
+	// split the genre input by &s
+	$genres = preg_split("/&/", $genrestring);
+	$n = count($genres);
+
+	// convert array to something we can put in the query
+	$glist = addquotes($genres, $n);
+	
+	$r = dbQuery($db, mkSQL($gq, $startyear, $endyear, $glist, $n, $limit));
+	printmovieinfo($db, $r, $limit, $startyear, $endyear);
+}
+
+?>

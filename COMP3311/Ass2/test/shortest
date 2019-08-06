@@ -1,0 +1,118 @@
+#!/usr/bin/php
+<?php
+
+//
+// shortest - takes two actor names and lists the shortest path between two given actors
+//
+
+// include the common PHP code file
+require("a2.php");
+
+// PROGRAM BODY BEGINS
+
+$usage = "Usage: $argv[0] actor1_name actor2_name";
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+if (count($argv) <= 2) { 
+	echo "$usage\n";
+	return;
+}
+
+$n1 = $argv[1];
+$n2 = $argv[2];
+$q = "select a.id from actor a where a.name ~* %s";
+$actor1 = dbQuery($db, mkSQL($q, $n1));
+$actor2 = dbQuery($db, mkSQL($q, $n2));
+$r1 = dbNext($actor1);
+$r2 = dbNext($actor2);
+$a2_id = $r2[0];
+$a1_id = $r1[0];
+
+// queries
+$getmovie = "select m.title, m.year from movie m where m.id = %d";
+$getactor = "select a.name from actor a where a.id = %d";
+
+$result_count = 1;
+$q = array();
+
+$i = 0;
+while ($i <= 7) {
+	$q[$i] = array();
+	$i++;
+}
+
+$visited = array();
+$temp = array();
+$degree = 0;
+$max_degree = 7;
+
+array_push($q[$degree], $a1_id); // add actor to queue
+$names = array();
+$actor = array_shift($q[$degree]);
+while (true) {	
+	if ($actor != null and !isset($visited[$actor])) {
+		if ($actor == $a2_id) {
+			$max_degree = $degree;
+			break;
+		}
+		// add neighbours to queue
+		$neighbour_list = getneighbours($db, $actor);
+		foreach ($neighbour_list as $neighbour) {
+			if (!isset($visited[$neighbour['actor2']])) { 
+				array_push($q[$degree+1], $neighbour['actor2']);
+			}
+		}
+	}
+	// add elem to visited
+	$visited[$actor] = true;
+	$actor = array_shift($q[$degree]);
+	if ($actor == null) {
+		$degree += 1;
+		if ($degree >= 7) {
+			$max_degree = null;
+			break;
+		}
+	}
+}
+
+$temp2 = array();
+$v1 = array();
+$temp2['actor'] = $a1_id;
+$temp2['movie'] = null;
+if ($max_degree != null) {
+	$v = search($db, $temp2, $a2_id, 0, null, $v1, $max_degree);
+}
+
+// print everything
+$c = 1;
+foreach ($v as $path) {
+	$prev_actor = null;
+	$i = count($path)-1;
+	echo "$c. ";
+	$c++;
+	$a1name = dbNext(dbQuery($db, mkSQL($getactor, $a1_id)));
+	echo $a1name[0];
+	echo " was in ";
+	while ($i > 0) {
+		if ($prev_actor != null) {
+			echo "$prev_actor was in ";
+		}
+		$movie = $path[$i]['movie'];
+		$movie_r = dbNext(dbQuery($db, mkSQL($getmovie, $movie)));
+		echo $movie_r[0]; 
+		if (!empty($movie_r[1]))
+		echo " (" . $movie_r[1] . ")"; 
+		echo " with ";
+		$actor = $path[$i]['actor'];
+		$actor_r = dbNext(dbQuery($db, mkSQL($getactor, $actor)));
+		echo $actor_r[0];
+		if ($i != 1) {
+			echo "; ";
+		}
+		$prev_actor = $actor_r[0];
+		$i = $i - 1;
+	}
+	echo "\n";
+}
+?>

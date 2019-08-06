@@ -1,0 +1,129 @@
+#!/usr/bin/php
+<?php
+require("a2.php");
+// PROGRAM BODY BEGINS
+
+$db = dbConnect(DB_CONNECTION);
+$usage = "./degrees \"actor_name\" degree1 degree2\n";
+
+if (count($argv) != 4) {
+	echo $usage;
+	return;
+}
+
+if ($argv[2] < 1 || $argv[2] > 6 || $argv[3] > 6 || $argv[3] < $argv[2]) {
+	echo "degrees must be between 1 and 6\n";
+	return;
+}
+
+$actorname = $argv[1];
+$n1 = $argv[2];
+$n2 = $argv[3];
+
+// get actor id from their name
+$getactorid = "select a.id from actor a where a.name ~* %s";
+$actorid = dbQuery($db, mkSQL($getactorid, $actorname));
+
+// Implement a DFS
+$path = array();
+$idinfo = array();
+$actoridres = dbNext($actorid);
+$idinfo["actor"] = 1;
+$idinfo["id"] = $actoridres[0];
+array_push($path, $idinfo);
+$c = 1;
+$visited = array();
+
+
+$count = 0;		// keep track of each level (change between actor and movie)
+$int = 0;
+$results = array();
+$i = 0;
+//Iterate through the path array
+while (!empty($path)) {
+	// pop off the first actor/movie id from the array
+	$id = array_shift($path);
+	// check if its a movie/actor	
+	if ($id["actor"] == 1) {							// confirm that its an actor id
+		if ($count != 0) {						// means prev was a movie
+			$count = 0;							// reset count to 0
+		}
+		if ($i >= $n1 && $i <= $n2 && $id["id"] != $actoridres[0]) {				// if its within the degrees we want
+			$temp = array();
+			$temp["id"] = $id["id"];
+			$temp["degree"] = $i;
+			array_push($results, $temp);			// record them in the results array
+		}
+		if ($i > $n2) {								// if we're already past the highest degree, no need to iterate more
+			break;
+		}
+		// get list of ids of movies that the inputted actor is acting in
+		$getmoviesq = "select a.movie_id from acting a where a.actor_id = %d"; 
+		$idlist = dbQuery($db, mkSQL($getmoviesq, $id["id"]));
+		// iterate through list of their movies and add to path
+		while ($m = dbNext($idlist)) {
+//			if (!isset($visited[$id["id"]]) {
+				$temp2 = array();
+				$temp2["actor"] = 0;
+				$temp2["id"] = $m[0];
+				array_push($path, $temp2);
+//			}
+		}
+	}
+
+	// must be a movie id
+	else {
+		if ($count == 0) {
+			$count = 1;
+			$i++;
+			if ($i >$n2) {
+				break;
+			}
+		}
+		// get list of actors associated with each movie
+		$getactorsq = "select a.actor_id from acting a where a.movie_id = %d";
+		$idlist = dbQuery($db, mkSQL($getactorsq, $id["id"]));
+	
+		// iterate through list of their actors and add to path
+		while ($m = dbNext($idlist)) {
+			if (!isset($visited[$m[0]])) {
+				$temp2 = array();
+				$temp2["actor"] = 1;
+				$temp2["id"] = $m[0];
+				array_push($path, $temp2);
+				$visited[$m[0]] = true;
+			}
+		}
+	}
+}
+
+// remove duplicates
+$results = array_map("unserialize", array_unique(array_map("serialize", $results)));
+
+// convert all the ids into actor names, and then store in another array with their edegree
+$namearray = array();
+foreach ($results as $names) {
+	$getnames = "select a.name from actor a where a.id = %d";
+	$r = dbQuery($db, mkSQL($getnames, $names["id"]));
+	$name = dbNext($r);
+	$temparray = array();
+	$temparray["name"] = $name[0];
+	$temparray["degree"] = $names["degree"];
+	array_push($namearray, $temparray);
+}
+// sort array
+usort($namearray, function($x, $y) {
+	$degree = $x["degree"] - $y["degree"];
+	if ($degree == 0) {
+			return strcasecmp($x["name"], $y["name"]);
+	}
+	return $degree;
+});
+
+// print results
+$i = 1;
+foreach ($namearray as $actors) {
+	echo $i.". ".$actors["name"]." ". "(".$actors["degree"].")" . "\n";
+	$i++;
+}
+?>

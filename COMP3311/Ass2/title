@@ -1,0 +1,46 @@
+#!/usr/bin/php
+<?php
+// get the genres of the inserted title
+// include the common PHP code file
+require("a2.php");
+
+$usage = "Usage: $argv[0] \"substring\"";
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+if (count($argv) != 2) exit("$usage\n");
+
+// Get the return results
+$substring = strtoupper($argv[1]);
+$moviequery = "select m.title, m.year, m.content_rating, r.imdb_score from movie m, rating r where m.id = r.movie_id and m.title ~*%s order by year ASC, r.imdb_score DESC, m.title ASC";
+$genrequery = "select genrelist.title, genrelist.genre from genrelist where genrelist.title = %s";
+
+// query which returns list of distinct movies fitting a certain pattern
+$movies = dbQuery($db, mkSQL($moviequery, $substring));
+// query which returns list of genres for a certain movie
+
+// Iterate through the results and print
+$i = 1;
+while ($movie_title = dbNext($movies)) {
+	echo "$i. $movie_title[0] ("; 
+	if (!empty($movie_title[1]))
+		echo "$movie_title[1], ";
+	if (!empty($movie_title[2])) 
+		echo "$movie_title[2], ";
+	if (!empty($movie_title[3])) 
+		echo "$movie_title[3]";
+	echo ")";
+	
+	// nested loop for genres
+	echo " [";	
+	$genres = dbQuery($db, mkSQL($genrequery, $movie_title[0]));
+	$string = "";
+	while ($genre = dbNext($genres)) {
+		$string .= "$genre[1],";
+	}
+	$string = trim($string, ',');
+	echo "$string";
+	echo "]\n";
+	$i++;
+}
+?>

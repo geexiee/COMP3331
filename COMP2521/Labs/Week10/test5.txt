@@ -1,0 +1,8 @@
+Tree:
+9
+
+#nodes = 1,  #leaves = 1
+Infix  : 9 
+Prefix : 9 
+Postfix: 9 
+ByLevel: 9 

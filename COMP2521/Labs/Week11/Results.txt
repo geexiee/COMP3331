@@ -1,0 +1,30 @@
+Results for Tests on 5000 values
+
+Depth = depth of tree, Cost = average #comparisons per search
+
+
+             Ascending Order        Prefix Order        Random Order
+Insert
+Method       Depth      Cost     Depth      Cost     Depth      Cost
+
+L              200	  206.73  ________  ________  ________  ________
+
+A              200     70.52  ________  ________  ________  ________
+
+R              106     40.39  ________  ________  ________  ________
+
+B               12     14.34  ________  ________  ________  ________
+
+S              199     14.92  ________  ________  ________  ________
+
+V                8     12.14  ________  ________  ________  ________
+
+
+Notes (what the above indicates):
+This indicates that when the values provided are in ascending order, when inserted as:
+Leaves (L), the average number of comparisons are significantly higher. Thisis because the program has to move down to the leaves to check each value.
+Root (A), there are fewer comparisons per search since the root is easier to find than the leaves
+Randomly choosing between L and A (R), there are even fewer comparisons required as some insertions will be at leaves which requires more comparisons, and some insertions will be at the roots which requires less comparisons
+Leaves with periodic rebalances (B), there are very few comparisons as the rebalances make it easier for the program to insert
+Splay Tree (S), there are very few comparisons as the splay tree approach allows for it due to its self adjusting nature
+AVL Tree (V), requires the least comparisons as the AVL algorithm is most efficient for insertion

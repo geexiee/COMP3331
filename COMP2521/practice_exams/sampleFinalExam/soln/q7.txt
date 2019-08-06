@@ -1,0 +1,32 @@
+Question 7 ... COMP1927 14s2 Final Exam
+
+
+A.  (after inserting 8 into 2-3-4 tree)
+
+root = [12|35|60]
+leaf = [1|7|8]
+
+
+B.  (after inserting 42 into 2-3-4 tree)
+
+root = [35]
+leaf = [36|42]
+
+
+C.  (after inserting 8 into red-black tree)
+
+root = (35)
+parent = (7)
+
+
+D.  (after inserting 42 into red-black tree)
+
+root = (35)
+parent = (36) or (44)
+
+
+E.  (# representations of 2-3-4 nodes)
+
+2-node has only 1 representation
+3-node has 2 representations
+4-node has only 1 representation
